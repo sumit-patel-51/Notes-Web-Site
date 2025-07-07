@@ -125,7 +125,7 @@ app.get("/get-user", authenticateToken, async (req, res) => {
       _id: isUser._id,
       createdOn: isUser.createdOn,
     },
-    message: ""
+    message: "",
   });
 });
 
@@ -277,6 +277,36 @@ app.post("/update-note-pinned/:noteId", authenticateToken, async (req, res) => {
     return res
       .status(500)
       .json({ error: true, message: "Internal Server Error." });
+  }
+});
+
+app.get("/search-notes", authenticateToken, async (req, res) => {
+  const { user } = req.user;
+  const { query } = req.query;
+
+  if (!query) {
+    return res
+      .status(400)
+      .json({ error: true, message: "Search Query is required!" });
+  }
+  try {
+    const metchingNotes = await Note.find({
+      userId: user._id,
+      $or: [
+        { title: { $regex: new RegExp(query, "i") } },
+        { content: { $regex: new RegExp(query, "i") } },
+      ],
+    });
+
+    return res.json({
+      error: false,
+      metchingNotes,
+      message: "Note Metching the search query retrieved Successfully! ",
+    });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ error: true, message: "Internel Server Error!" });
   }
 });
 

@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import Navbar from "../../components/Navbar";
 import PasswordInput from "../../components/Input/PasswordInput";
 import { validateEmail } from "../../util/helper";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import axiosInstance from "../../util/axiosInstance.js";
+
 
 function SingUp() {
   const [name, setName] = useState("");
@@ -10,11 +12,13 @@ function SingUp() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
+  const navigate = useNavigate()
+
   const handleSingUp = async (e) => {
     e.preventDefault();
     if (!name) {
       setError("Please Enter Name");
-      return
+      return;
     }
     if (!validateEmail(email)) {
       setError("Please Enter Valid Email Address");
@@ -22,13 +26,35 @@ function SingUp() {
     }
     if (!password) {
       setError("Please Enter Password");
-      return
+      return;
     }
     setError("");
 
     //Singup API call
+    try {
+      const responce = await axiosInstance.post("/create-account", {
+        fullName: name,
+        email: email,
+        password: password,
+      });
 
-    
+      if(responce.data && responce.data.error) {
+        setError(responce.data.message)
+        return
+      }
+
+      if (responce.data && responce.data.accessToken) {
+        localStorage.setItem("token", responce.data.accessToken);
+        navigate('/dashboard')
+      }
+    } catch (error) {
+      if(error.responce && error.responce.data && error.responce.data.message){
+        setError(error.responce.data.message)
+      }
+      else {
+        setError('An unexpected error occured. Please try again.')
+      }
+    }
   };
   return (
     <>
@@ -63,7 +89,7 @@ function SingUp() {
               Create Account
             </button>
             <p className="text-center mt-4">
-              Already have an account? {" "}
+              Already have an account?{" "}
               <Link to={"/login"} className="text-blue-700 underline">
                 Login
               </Link>

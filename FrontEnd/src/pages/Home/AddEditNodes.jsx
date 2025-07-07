@@ -1,18 +1,68 @@
 import React, { useState } from "react";
 import TagInput from "../../components/Input/TagInput";
 import { MdClose } from "react-icons/md";
+import axiosInstance from "../../util/axiosInstance";
 
-function AddEditNodes({ noteData, type, onClose }) {
-  const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
-  const [tags, setTags] = useState([]);
+function AddEditNodes({
+  noteData,
+  type,
+  onClose,
+  getAllNotes,
+  showToastMessage,
+}) {
+  const [title, setTitle] = useState(noteData?.title || "");
+  const [content, setContent] = useState(noteData?.content || "");
+  const [tags, setTags] = useState(noteData?.tags || []);
   const [error, setError] = useState(null);
 
   // add new node
-  const addNewNote = async () => {};
+  const addNewNote = async () => {
+    try {
+      const responce = await axiosInstance.post("/add-notes", {
+        title,
+        content,
+        tags,
+      });
+      if (responce.data && responce.data.note) {
+        showToastMessage("Node Added Successfully!");
+        getAllNotes();
+        onClose();
+      }
+    } catch (error) {
+      if (
+        error.responce &&
+        error.responce.data &&
+        error.responce.data.message
+      ) {
+        setError(error.responce.data.message);
+      }
+    }
+  };
 
   // edit node
-  const editNote = async () => {};
+  const editNote = async () => {
+    try {
+      const nodeId = noteData._id;
+      const responce = await axiosInstance.post("/edit-note/" + nodeId, {
+        title,
+        content,
+        tags,
+      });
+      if (responce.data && responce.data.note) {
+        showToastMessage("Node Updated Successfully!");
+        getAllNotes();
+        onClose();
+      }
+    } catch (error) {
+      if (
+        error.responce &&
+        error.responce.data &&
+        error.responce.data.message
+      ) {
+        setError(error.responce.data.message);
+      }
+    }
+  };
 
   const handleAddNote = () => {
     if (!title) {
@@ -25,10 +75,9 @@ function AddEditNodes({ noteData, type, onClose }) {
     }
     setError("");
     if (type == "edit") {
-      editNote()
-    }
-    else{
-      addNewNote()
+      editNote();
+    } else {
+      addNewNote();
     }
   };
 
@@ -82,7 +131,7 @@ function AddEditNodes({ noteData, type, onClose }) {
           handleAddNote();
         }}
       >
-        ADD
+        {type == "edit" ? "UPDATE" : "ADD"}
       </button>
     </div>
   );
